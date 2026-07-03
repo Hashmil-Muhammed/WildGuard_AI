@@ -1,5 +1,5 @@
 <h1 align="center">
-  WildGuard AI - Autonomous Wildlife Monitoring & Conflict Mitigation System
+  WildGuard AI
 </h1>
 
 <p align="center">
