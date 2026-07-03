@@ -5,6 +5,7 @@
   <img src="https://img.shields.io/badge/Security-Guardrails-FF6D00?style=for-the-badge&logo=shield&logoColor=white" alt="Security Guardrails"/>
   <img src="https://img.shields.io/badge/Tests-60_Passing-00C853?style=for-the-badge&logo=pytest&logoColor=white" alt="60 Tests Passing"/>
 </p>
+<img width="1536" height="1024" alt="WildGuardAi" src="https://github.com/user-attachments/assets/7f2652e1-6aa6-4fb4-b853-82f9b1a31094" />
 
 # WildGuard AI
 
