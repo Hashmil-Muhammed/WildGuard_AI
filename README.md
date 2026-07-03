@@ -1,6 +1,7 @@
-<p align="center">
-  # WildGuard AI - Autonomous Wildlife Monitoring & Conflict Mitigation System
-</p>
+<h1 align="center">
+  WildGuard AI - Autonomous Wildlife Monitoring & Conflict Mitigation System
+</h1>
+
 <p align="center">
   <img src="https://img.shields.io/badge/Google_ADK-2.0-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Google ADK 2.0"/>
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+"/>
@@ -8,6 +9,7 @@
   <img src="https://img.shields.io/badge/Security-Guardrails-FF6D00?style=for-the-badge&logo=shield&logoColor=white" alt="Security Guardrails"/>
   <img src="https://img.shields.io/badge/Tests-60_Passing-00C853?style=for-the-badge&logo=pytest&logoColor=white" alt="60 Tests Passing"/>
 </p>
+
 
 # WildGuard AI - Autonomous Wildlife Monitoring & Conflict Mitigation System
 
