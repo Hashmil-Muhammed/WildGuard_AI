@@ -1,9 +1,8 @@
 <p align="center">
   
-  # 📊 Bluestock Fintech Data Analyst Internship Portfolio
+  # WildGuard AI - Autonomous Wildlife Monitoring & Conflict Mitigation System
   
   ---
-  # WildGuard AI - Autonomous Wildlife Monitoring & Conflict Mitigation System
   <img src="https://img.shields.io/badge/Google_ADK-2.0-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Google ADK 2.0"/>
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+"/>
   <img src="https://img.shields.io/badge/MCP-Integrated-00C853?style=for-the-badge" alt="MCP Integrated"/>
