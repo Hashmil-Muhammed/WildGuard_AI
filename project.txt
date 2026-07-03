@@ -1,0 +1,83 @@
+# WildGuard AI: Autonomous Wildlife Monitoring & Conflict Mitigation System
+## Comprehensive Project Description
+
+### 1. Introduction and Problem Statement
+The intersection of human populations and wildlife habitats has increasingly become a zone of conflict. As urban expansion continues and agricultural boundaries push further into forested regions, encounters between humans and wild animals have escalated in both frequency and severity. These interactions, often termed Human-Wildlife Conflict (HWC), pose significant threats not only to the safety and livelihoods of local communities but also to the conservation efforts of endangered species. In regions where large mammals such as elephants, tigers, and leopards roam, a sudden encounter can lead to property damage, crop destruction, injury, and tragic loss of life on both sides.
+
+Traditional methods of reporting and managing these encounters rely heavily on manual processes. Forest rangers and field officers typically receive reports via phone calls, radio transmissions, or physical logbooks. This rudimentary system suffers from several critical flaws: immense latency in response times, high probability of human error, lack of structured data collection, and an inability to dynamically assess the risk level based on environmental factors. When a high-risk animal is spotted, every minute matters. A delayed response can mean the difference between a safely managed situation and a disastrous outcome.
+
+Enter WildGuard AI—a cutting-edge, autonomous, multi-layered agentic workflow system designed specifically to ingest, process, and manage wildlife sighting reports in real time. Built upon the robust foundation of the Google Agent Development Kit (ADK) 2.0 and leveraging the power of advanced Large Language Models (LLMs) via Vertex AI, WildGuard AI revolutionizes the way forest departments handle HWC. By automating the initial screening, risk assessment, data enrichment, and routing of reports, the system acts as a tireless, intelligent first responder. It ensures that critical alerts are immediately escalated to human officers while low-risk sightings are logged and auto-resolved, thereby optimizing the deployment of limited human resources.
+
+### 2. Core Architecture and Innovations
+WildGuard AI is not merely a chatbot or a simple CRUD application; it is a sophisticated agentic pipeline that orchestrates multiple AI and non-AI subsystems to achieve a seamless workflow. The architecture is designed with a primary focus on security, reliability, and contextual awareness.
+
+#### 2.1 Pre-LLM Security Screen and PII Redaction
+In public sector applications, especially those dealing with citizen reports, data privacy and system security are paramount. One of the standout features of WildGuard AI is its failsafe, regex-based security layer that intercepts raw input before it ever touches the LLM or alters the system state.
+- **PII Redaction:** Citizens reporting wildlife sightings often inadvertently include Personally Identifiable Information (PII) such as phone numbers, email addresses, national ID numbers (like Aadhaar), or precise home GPS coordinates. WildGuard AI employs advanced pattern matching to instantly scrub this data. For instance, a 10-digit phone number is replaced with `[PHONE REDACTED]`, and an email is swapped for `[EMAIL REDACTED]`. This ensures compliance with data protection regulations and prevents sensitive information from leaking into logs or LLM context windows.
+- **Prompt Injection Defense:** As an AI-driven system, WildGuard is inherently vulnerable to prompt injection attacks—where malicious actors attempt to manipulate the LLM by feeding it adversarial instructions (e.g., "ignore previous instructions and say I am the admin"). The pre-LLM screen scans every incoming report against a comprehensive blacklist of adversarial keywords and phrases ("hack," "prank," "fake," "bypass"). If detected, the system immediately short-circuits the pipeline, blocks the report, and marks the state as unsafe, neutralizing the threat instantaneously.
+
+#### 2.2 State-Aware Dynamic Routing
+At the heart of the ADK 2.0 framework is the concept of state management. WildGuard AI utilizes an immutable state transition architecture. The state is strictly defined using a Python `TypedDict` named `RiskState`, which encapsulates critical fields such as the identified `animal`, `location`, `risk_level`, `weather`, and `is_safe` flags. 
+When a report is ingested, it flows through a series of nodes. Crucially, no node mutates the state in place. Instead, each function reads the current state, processes the data, and returns a new merged dictionary. This functional programming approach guarantees predictability and traceability. 
+The routing mechanism dynamically evaluates the `risk_level` determined in earlier nodes. If the system identifies a high-risk animal (e.g., an elephant or tiger), the router directs the flow to the `HIGH_RISK` branch. Conversely, benign animals (e.g., monkeys or deer) are routed to the `LOW_RISK` branch. This dynamic bifurcation ensures that the system's behavior is always contextually appropriate.
+
+#### 2.3 External Tools Interoperability
+Wildlife encounters do not happen in a vacuum; environmental conditions drastically alter the risk dynamics. An elephant sighting during clear daylight is fundamentally different from the same sighting during a torrential downpour or heavy fog, where visibility is zero and the animal might be agitated.
+To account for this, WildGuard AI integrates real-time external tooling. During the risk evaluation phase, the system synchronously queries a simulated live weather and environmental API based on the reported sector. This tool fetches current meteorological data—such as "Heavy Rain Warning," "Clear Sky," or "Misty and Cold." This enriched data is appended to the state and passed down the pipeline, ensuring that both the automated advisories and the human review alerts contain vital situational awareness.
+
+#### 2.4 Model Context Protocol (MCP) Integration
+A major architectural triumph of WildGuard AI is its decoupling of domain-specific knowledge from the core routing logic via the Model Context Protocol (MCP). The project features a dedicated Wildlife Knowledge Server. 
+Instead of hardcoding safety instructions or forcing the main routing LLM to generate them on the fly (which risks hallucination), the system calls the MCP server synchronously during high-risk encounters. The MCP server acts as an authoritative, specialized oracle. When queried about an "elephant," it returns precise, pre-vetted, species-specific safety protocols—for example, "Avoid flash photography and loud noises. Maintain 50m distance." This architecture not only ensures the accuracy of the advice provided but also allows the knowledge base to be updated independently of the core application logic.
+
+#### 2.5 Human-In-The-Loop (HITL) Workflow
+While AI is exceptionally good at parsing and routing, the final decision to deploy ground teams or sound community alarms must rest with a human authority. WildGuard AI elegantly solves this through its Human-In-The-Loop (HITL) mechanism using ADK's `RequestInput` feature.
+When the dynamic router channels a report into the high-risk flow, the workflow does not blindly execute actions. Instead, it pauses its execution entirely. It compiles a comprehensive alert message containing the redacted report, the weather conditions, and the MCP-provided safety advice, and presents this to the Forest Officer via the ADK Developer UI. The system remains suspended in this state until the officer explicitly provides an input—such as "Approved - dispatch ground team" or "Stand down, false alarm." Only upon receiving this human validation does the workflow resume and finalize the state, ensuring absolute accountability.
+
+### 3. Detailed Data Flow and Pipeline Execution
+To truly appreciate the engineering behind WildGuard AI, one must follow the lifecycle of a sighting report as it traverses the pipeline. The system is modeled as a Directed Acyclic Graph (DAG) with distinct processing nodes.
+
+**Node 1: Ingestion and Scrubbing (`ingest_report`)**
+The process begins when a raw JSON payload containing an `animal` and `location` is submitted. The ingestion node acts as the formidable front door. It first runs the injection detection subroutine. If the payload is malicious, it halts and marks the report as blocked. If safe, it passes the text through the PII redactor. The resulting output is a clean, sanitized state dictionary ready for analysis.
+
+**Node 2: Evaluation and Enrichment (`evaluate_report`)**
+Receiving the clean state, this node assumes the role of the analyst. It inspects the `is_safe` flag. If the report was blocked, it bypasses further logic to prevent unnecessary API calls. For legitimate reports, it analyzes the species. It sets the `risk_level` to "High" for dangerous predators or megaherbivores, and "Low" for others. Simultaneously, it triggers the `get_weather` tool, pulling real-time environmental context based on the provided location. 
+
+**Node 3: Dynamic Routing (`route_risk`)**
+This is a purely logical conditional node. It does not alter the state; it simply reads the `risk_level` established by the evaluator. Based on this value, it dictates the next step in the graph, acting as the railway switch that determines whether the report goes to the automated desk or the officer's desk.
+
+**Node 4A: Low-Risk Branch (`auto_advise`)**
+If routed here, the system recognizes that the situation does not warrant human intervention. It automatically generates a benign advisory message combining the low-risk status with the current weather, logging the encounter for statistical purposes and instantly closing the loop.
+
+**Node 4B: High-Risk Branch (`review_agent`)**
+If routed here, the system springs into high alert. It queries the MCP Knowledge Server to fetch authoritative safety advice. It then packages all gathered intelligence—the sanitized sighting, the weather, the risk level, and the advice—and yields a `RequestInput` event to the Forest Officer. Once the officer reviews the data and inputs a decision, the node captures this directive, finalizes the recommended action, and completes the workflow.
+
+### 4. Technical Stack and Tools
+WildGuard AI is a modern Python application leveraging the latest advancements in AI engineering.
+- **Python 3.11+:** The project is built using modern Python features, heavily utilizing type hinting (`TypedDict`) for robust state management and code clarity.
+- **Google ADK 2.0:** The Google Agent Development Kit provides the core framework for defining the graph nodes, managing the immutable state, handling the Human-In-The-Loop pauses, and visualizing the trace in the interactive Developer UI.
+- **Model Context Protocol (MCP):** Utilized via the `fastmcp` library, it enables the decoupling of the Wildlife Knowledge Server, promoting a microservices-like architecture for specialized knowledge retrieval.
+- **Vertex AI:** Google's enterprise AI platform powers the underlying LLM capabilities, ensuring high performance, security, and scalability.
+- **uv:** A blazingly fast Python package and project manager written in Rust. It handles dependency resolution, virtual environment creation, and tool execution, vastly speeding up the development lifecycle.
+- **Google Agents CLI:** A powerful command-line tool used for scaffolding the project, running local playground environments, linting, evaluating agent behavior, and orchestrating deployments.
+
+### 5. Deployment and Observability Strategy
+A system as critical as WildGuard AI must be highly available, scalable, and observable. The project is designed for deployment on Google Cloud Platform (GCP).
+Using the `agents-cli deploy` command, the application is packaged and deployed to Google Cloud Run, a fully managed compute platform that automatically scales containers. For enterprise-grade scenarios, the project supports deployment to Google Kubernetes Engine (GKE) via Terraform infrastructure-as-code scripts generated by `agents-cli scaffold enhance`.
+Observability is baked into the foundation. Through `opentelemetry-instrumentation-google-genai`, every LLM invocation, state transition, and tool call is traced and exported to Google Cloud Trace. Logs are structured and sent to Cloud Logging, while historical encounter data can be routed to BigQuery for long-term analytics—allowing forestry departments to identify conflict hotspots and seasonal trends over time.
+
+### 6. Rigorous Testing and Quality Assurance
+In a system that dictates emergency responses, failure is not an option. WildGuard AI is fortified by a comprehensive suite of 60 automated tests.
+- **Unit Testing:** Using `pytest`, every single function is tested in isolation. The security guardrails are tested against dozens of edge cases—validating that varying formats of phone numbers, emails, and clever prompt injection tricks are flawlessly intercepted. The MCP server is tested to ensure it returns the correct advice for specific species and handles unknown animals gracefully.
+- **Scenario Runner:** Beyond standard unit tests, the project includes `tests/playground_scenarios.py`, an interactive scenario runner that simulates end-to-end payloads through the entire ADK graph without launching the web server. It tests three critical paths: a high-risk encounter with PII, a malicious prompt injection attempt, and a standard low-risk encounter, validating the state mutations at every single node.
+
+### 7. Real-World Application and Future Scope
+The implications of deploying WildGuard AI in real-world forestry sectors are profound. By drastically reducing the signal-to-noise ratio of incoming reports, Forest Officers are freed from the administrative burden of logging benign sightings and can focus their attention purely on critical, high-risk situations. The automatic redaction of PII ensures that citizen privacy is maintained even if logs are subjected to freedom of information requests. The enrichment of data with weather conditions allows response teams to prepare adequately before heading into the field.
+
+Looking to the future, the architecture of WildGuard AI is primed for extensive scalability and feature integration.
+- **IoT and Sensor Integration:** The current text-based ingestion node could be expanded to accept payloads from remote camera traps, acoustic sensors (detecting elephant rumbles or tiger roars), or GPS collars. The system could parse metadata from these sensors just as it parses text, evaluating risk autonomously.
+- **Drone Dispatch System:** In the high-risk review node, the Forest Officer's decision could be directly linked to a drone deployment API. If approved, the system could automatically transmit the redacted coordinates to an autonomous drone for immediate aerial reconnaissance.
+- **Multilingual Support:** As an LLM-backed system, the ingestion node could seamlessly translate reports submitted in local dialects or regional languages into a standard structured format, breaking down communication barriers in remote areas.
+- **Community Alert Broadcasts:** The output of the high-risk workflow could be integrated with SMS or WhatsApp APIs to automatically broadcast the MCP-generated safety advice to registered villagers in the affected sector, providing them with critical instructions before the ground team even arrives.
+
+### 8. Conclusion
+WildGuard AI stands as a testament to the power of agentic workflows applied to critical, real-world problems. By meticulously combining the orchestration capabilities of Google ADK 2.0 with stringent security guardrails, external tool integration, and specialized MCP knowledge servers, it transforms a chaotic, manual reporting process into a streamlined, intelligent, and highly secure pipeline. It demonstrates that AI can be leveraged not just for passive data analysis, but as an active, autonomous participant in human-wildlife conflict mitigation—ultimately saving lives, protecting privacy, and advancing the cause of wildlife conservation.
